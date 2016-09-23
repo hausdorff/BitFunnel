@@ -4,6 +4,7 @@ set(CPPFILES
     AbstractRow.cpp
     CompileNode.cpp
     MatchTreeRewriter.cpp
+    MatchInterpreter.cpp
     QueryParser.cpp
     QueryPipeline.cpp
     # QueryPlanner.cpp
