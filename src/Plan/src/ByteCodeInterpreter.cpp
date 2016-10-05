@@ -97,6 +97,7 @@ Decide on type of Slices
         char const * sliceBuffer,
         size_t iteration)
     {
+        bool calledAddResult = false;
         m_ip = m_code.data();
         m_offset = iteration;
 
@@ -122,7 +123,9 @@ Decide on type of Slices
                 break;
             case Opcode::LoadRow:
                 {
-                    auto rowPtr = sliceBuffer + m_rowOffsets[row];
+                    uint64_t const * rowPtr =
+                        reinterpret_cast<uint64_t const *>(
+                            sliceBuffer + m_rowOffsets[row]);
                     auto value = *(rowPtr + (m_offset >> delta));
                     m_accumulator = (inverted ? ~value : value);
                     m_zeroFlag = (m_accumulator == 0);
@@ -176,15 +179,16 @@ Decide on type of Slices
                 break;
             case Opcode::Report:
                 // TODO: Combine accumulator with value stack.
-                std::cout
-                    << "Report("
-                    << std::hex
-                    << m_accumulator
-                    << ", "
-                    << m_offset
-                    << ")"
-                    << std::endl;
+                //std::cout
+                //    << "Report("
+                //    << std::hex
+                //    << m_accumulator
+                //    << ", "
+                //    << m_offset
+                //    << ")"
+                //    << std::endl;
                 m_resultsProcessor.AddResult(m_accumulator, m_offset);
+                calledAddResult = true;
                 m_ip++;
                 break;
             case Opcode::Call:
@@ -224,7 +228,10 @@ Decide on type of Slices
             }  // switch
         }  // while
 
-        m_resultsProcessor.FinishIteration(sliceBuffer);
+        if (calledAddResult)
+        {
+            m_resultsProcessor.FinishIteration(sliceBuffer);
+        }
     }
 
 
