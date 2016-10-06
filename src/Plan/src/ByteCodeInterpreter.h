@@ -133,11 +133,12 @@ namespace BitFunnel
                 CHECK_LT(opcode, Opcode::Last)
                     << "Unknown opcode " << opcode;
 
-                CHECK_LE(row, c_maxRowValue)
-                    << "row " << row << " out of range.";
+                // TODO:
+                // CHECK_LE(row, c_maxRowValue)
+                //     << "row " << row << " out of range.";
 
-                CHECK_LE(delta, c_maxDeltaValue)
-                    << "delta " << delta << " out of range.";
+                // CHECK_LE(delta, c_maxDeltaValue)
+                //     << "delta " << delta << " out of range.";
             }
 
             Opcode GetOpcode() const
