@@ -186,7 +186,7 @@ public:
     //
     CheckBooleanResult(bool value,
                        bool expected)
-      : m_value(value),
+        : m_value(value),
         m_expected(expected)
     {
     }
@@ -282,5 +282,7 @@ if (const auto op = ::Logging::CheckBooleanResult(val, false)) \
 else                                                           \
     throw op.Exception(#val)
 
+#define CHECK_FAIL              \
+throw ::Logging::CheckException() << "Failure: "
 
 }   // namespace Logging
