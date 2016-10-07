@@ -30,6 +30,7 @@
 namespace BitFunnel
 {
     class IConfiguration;
+    class IDocument;
     class IFileSystem;
     class ISimpleIndex;
 
