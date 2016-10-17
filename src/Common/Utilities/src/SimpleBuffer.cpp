@@ -59,7 +59,13 @@ namespace BitFunnel
                                                MAP_ANON | MAP_PRIVATE,
                                                -1,  // No file descriptor.
                                                0));
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+            // `MAP_FAILED` is implemented as an old-style cast on some
+            // platforms.
             if (m_buffer == MAP_FAILED)
+#pragma GCC diagnostic pop
             {
                 std::stringstream errorMessage;
                 errorMessage << "AlignedBuffer Failed to mmap: " <<

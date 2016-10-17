@@ -149,9 +149,15 @@ namespace BitFunnel
                                                  MAP_ANON | MAP_PRIVATE,
                                                  -1,  // No file descriptor.
                                                  0));
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+            // `MAP_FAILED` is implemented as an old-style cast on some
+            // platforms.
             LogAssertB(buffer != MAP_FAILED,
                        "mmap failed %s",
                        std::strerror(errno));
+#pragma GCC diagnostic pop
 #endif
         }
         else
