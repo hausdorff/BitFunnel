@@ -4,6 +4,7 @@ set(CPPFILES
     BitFunnelTool.cpp
     Commands.cpp
     Environment.cpp
+    PerfTool.cpp
     REPL.cpp
     StatisticsBuilder.cpp
     TaskFactory.cpp
@@ -23,6 +24,7 @@ set(PRIVATE_HFILES
     Environment.h
     ICommand.h
     ITask.h
+    PerfTool.h
     REPL.h
     StatisticsBuilder.h
     TaskBase.h

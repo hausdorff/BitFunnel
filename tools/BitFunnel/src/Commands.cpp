@@ -706,10 +706,10 @@ namespace BitFunnel
     {
         if (m_isSingleQuery)
         {
-            std::cout
-                << "Processing query \""
-                << m_query
-                << "\"" << std::endl;
+            // std::cout
+            //     << "Processing query \""
+            //     << m_query
+            //     << "\"" << std::endl;
 
             auto streamConfiguration = Factories::CreateStreamConfiguration();
             QueryPipeline pipeline(*streamConfiguration);
@@ -746,10 +746,10 @@ namespace BitFunnel
                     }
                 }
 
-                std::cout
-                    << matchCount << " match(es) out of "
-                    << documentCount << " documents."
-                    << std::endl;
+                // std::cout
+                //     << matchCount << " match(es) out of "
+                //     << documentCount << " documents."
+                //     << std::endl;
 
                 auto diagnosticStream = Factories::CreateDiagnosticStream(std::cout);
                 diagnosticStream->Enable("");

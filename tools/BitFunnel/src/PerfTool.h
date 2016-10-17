@@ -22,26 +22,42 @@
 
 #pragma once
 
-#include <iosfwd>
+#include "IExecutable.h"               // Base class.
 
-#include "BitFunnel/BitFunnelTypes.h"  // DocId parameter.
-#include "BitFunnel/IInterface.h"      // IInterface base class.
 
 namespace BitFunnel
 {
-    class IMatchVerifier : public IInterface
+    class IFileSystem;
+
+    class PerfTool : public IExecutable
     {
     public:
-        virtual void AddExpected(DocId id) = 0;
-        virtual void AddObserved(DocId id) = 0;
-        virtual void Verify() = 0;
-        virtual void Print(std::ostream & out) const = 0;
-        virtual void Reset() = 0;
+        PerfTool(IFileSystem& fileSystem);
 
-        std::vector<DocId> m_expected;
-        std::vector<DocId> m_observed;
-        std::vector<DocId> m_truePositives;
-        std::vector<DocId> m_falsePositives;
-        std::vector<DocId> m_falseNegatives;
+        //
+        // IExecutable methods
+        //
+        virtual int Main(std::istream& input,
+                         std::ostream& output,
+                         int argc,
+                         char const *argv[]) override;
+
+    private:
+        void Advice(std::ostream& output) const;
+
+        // Read-Eval-Print-Loop for BitFunnel Index.
+        // Provides interactive console with commands for ingesting documents
+        // and running queries.
+        void Go(std::istream& input,
+                std::ostream& output,
+                char const * directory,
+                size_t gramSize,
+                size_t threadCount) const;
+
+        //
+        // Constructor parameters.
+        //
+
+        IFileSystem& m_fileSystem;
     };
 }

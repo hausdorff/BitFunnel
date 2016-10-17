@@ -28,6 +28,7 @@
 #include "BitFunnel/Configuration/IFileSystem.h"
 #include "BitFunnel/Exceptions.h"
 #include "BitFunnelTool.h"
+#include "PerfTool.h"
 #include "REPL.h"
 #include "StatisticsBuilder.h"
 #include "TermTableBuilderTool.h"
@@ -101,6 +102,10 @@ namespace BitFunnel
         {
             executable.reset(new TermTableBuilderTool(m_fileSystem));
         }
+        else if (strcmp(name, "perf") == 0)
+        {
+            executable.reset(new PerfTool(m_fileSystem));
+        }
 
         return executable;
     }
@@ -137,6 +142,7 @@ namespace BitFunnel
             << "   statistics     Generate corpus statistics used to configure the index." << std::endl
             << "   termtable      Construct a term table based on generated corpus statistics." << std::endl
             << "   repl           Run interative read-eval-print console." << std::endl
+            << "   perf           Run performance and benchmarking tool." << std::endl
             << std::endl
             << "See 'bitfunnel <command> -help' to read about a specific command." << std::endl
             ;

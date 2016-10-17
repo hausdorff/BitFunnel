@@ -38,11 +38,11 @@ namespace BitFunnel
         virtual void Print(std::ostream &) const override;
         virtual void Reset() override;
 
-    private:
-        std::vector<DocId> m_expected;
-        std::vector<DocId> m_observed;
-        std::vector<DocId> m_truePositives;
-        std::vector<DocId> m_falsePositives;
-        std::vector<DocId> m_falseNegatives;
+    // private:
+    //     std::vector<DocId> m_expected;
+    //     std::vector<DocId> m_observed;
+    //     std::vector<DocId> m_truePositives;
+    //     std::vector<DocId> m_falsePositives;
+    //     std::vector<DocId> m_falseNegatives;
     };
 }
