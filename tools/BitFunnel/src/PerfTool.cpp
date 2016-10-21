@@ -234,10 +234,11 @@ namespace BitFunnel
         // Execute queries.
         try
         {
-            const size_t numQueries = 50;
+            const size_t numQueries = 1;
 
             // Generate the query tree.
-            std::string command = "verify one wings";
+            // std::string command = "wings";
+            std::string command = "dskljfdsjkdsjklsdljksdjkl";
             auto streamConfiguration = Factories::CreateStreamConfiguration();
             auto diagnosticStream = Factories::CreateDiagnosticStream(output);
             QueryPipeline pipeline(*streamConfiguration);

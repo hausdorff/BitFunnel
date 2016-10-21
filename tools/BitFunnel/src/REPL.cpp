@@ -66,9 +66,15 @@ namespace BitFunnel
             "Set the thread count for ingestion and query processing.",
             1u);
 
+        CmdLine::OptionalParameter<char const *> manifestPath(
+            "manifestPath",
+            "Ingests files specified in a manifest file.",
+            "");
+
         parser.AddParameter(path);
         parser.AddParameter(gramSize);
         parser.AddParameter(threadCount);
+        parser.AddParameter(manifestPath);
 
         int returnCode = 1;
 
@@ -82,7 +88,8 @@ namespace BitFunnel
                    output,
                    path,
                    static_cast<size_t>(gramSize),
-                   static_cast<size_t>(threadCount));
+                   static_cast<size_t>(threadCount),
+                   manifestPath);
                 returnCode = 0;
             }
             catch (RecoverableError e)
@@ -120,7 +127,8 @@ namespace BitFunnel
                   std::ostream& output,
                   char const * directory,
                   size_t gramSize,
-                  size_t threadCount) const
+                  size_t threadCount,
+                  char const * manifestPath) const
     {
         output
             << "Welcome to BitFunnel!" << std::endl
@@ -162,6 +170,14 @@ namespace BitFunnel
 
         TaskFactory & factory = environment.GetTaskFactory();
         TaskPool & taskPool = environment.GetTaskPool();
+
+        if (std::string(manifestPath).compare("") != 0)
+        {
+            std::string command("cache manifest ");
+            command.append(manifestPath);
+            std::unique_ptr<ICommand> task(factory.CreateTask(command.c_str()));
+            task->Execute();
+        }
 
         for (;;)
         {

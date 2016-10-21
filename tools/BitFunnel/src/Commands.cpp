@@ -34,6 +34,7 @@
 #include "BitFunnel/Exceptions.h"
 #include "BitFunnel/IDiagnosticStream.h"
 #include "BitFunnel/Utilities/Factories.h"
+#include "BitFunnel/IFileManager.h"
 #include "BitFunnel/Index/Factories.h"
 #include "BitFunnel/Index/IChunkManifestIngestor.h"
 #include "BitFunnel/Index/IDocument.h"
@@ -49,6 +50,7 @@
 #include "BitFunnel/Index/RowIdSequence.h"
 #include "BitFunnel/Term.h"
 #include "Commands.h"
+#include "CsvTsv/Csv.h"
 #include "Environment.h"
 
 
@@ -208,14 +210,14 @@ namespace BitFunnel
         m_path = TaskFactory::GetNextToken(parameters);
     }
 
-
     void Ingest::Execute()
     {
         if (m_manifest)
         {
+            Environment & environment = GetEnvironment();
+
             if (m_path.compare("sonnets") == 0)
             {
-                Environment & environment = GetEnvironment();
                 IConfiguration const & configuration =
                     environment.GetConfiguration();
                 IIngestor & ingestor = environment.GetIngestor();
@@ -233,7 +235,47 @@ namespace BitFunnel
             }
             else
             {
-                std::cout << "Ingest manifest only implemented for sonnets." << std::endl;
+                auto & fileSystem = environment.GetFileSystem();
+                IConfiguration const & configuration =
+                    environment.GetConfiguration();
+                IIngestor & ingestor = environment.GetIngestor();
+                std::vector<std::string> filePaths;
+
+                {
+                    auto manifestStream = fileSystem.OpenForRead(
+                        m_path.c_str(),
+                        std::ios_base::in);
+
+                    // Define manifest file CSV schema.
+                    CsvTsv::CsvTableParser parser(*manifestStream);
+                    CsvTsv::TableReader reader(parser);
+
+                    CsvTsv::InputColumn<std::string> filePathsColumn(
+                        "filePaths",
+                        "Paths to chunk files.");
+                    reader.DefineColumn(filePathsColumn);
+
+                    // Read manifest file.
+                    reader.ReadPrologue();
+                    while (!reader.AtEOF())
+                    {
+                        reader.ReadDataRow();
+                        filePaths.push_back(filePathsColumn.GetValue());
+                    }
+
+                    // TODO: Seems like this would read past EOF.
+                    reader.ReadEpilogue();
+                }
+
+                auto manifest = Factories::CreateChunkManifestIngestor(
+                    fileSystem,
+                    filePaths,
+                    configuration,
+                    ingestor,
+                    m_cacheDocuments);
+
+                size_t threadCount = 1;
+                IngestChunks(*manifest, threadCount);
             }
         }
         else
@@ -253,8 +295,7 @@ namespace BitFunnel
             }
 
             Environment & environment = GetEnvironment();
-            IFileSystem & fileSystem =
-                environment.GetFileSystem();
+            IFileSystem & fileSystem = environment.GetFileSystem();
             IConfiguration const & configuration =
                 environment.GetConfiguration();
             IIngestor & ingestor = environment.GetIngestor();
