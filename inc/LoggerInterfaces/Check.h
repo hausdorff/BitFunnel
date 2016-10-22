@@ -47,7 +47,10 @@ namespace Logging
                                            !std::is_pointer<T>::value &&
                                            !std::is_convertible<T, char const *>::value, T const &>::type value)
     {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
         stream << value;
+#pragma GCC diagnostic pop
     }
 
     template <typename T>
@@ -56,7 +59,10 @@ namespace Logging
                             !std::is_convertible<T, char const *>::value) ||
                             std::is_null_pointer<T>::value, T const &>::type value)
     {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
         if (value == nullptr)
+#pragma GCC diagnostic pop
         {
             stream << "(nullptr)";
         }

@@ -252,11 +252,14 @@ namespace BitFunnel
     };
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
     inline std::ostream& operator<<(std::ostream& out, const ByteCodeInterpreter::Opcode value)
     {
         out << c_opcodeNames[static_cast<size_t>(value)];
         return out;
     }
+#pragma GCC diagnostic pop
 
 
     //*************************************************************************
