@@ -2,6 +2,7 @@
 
 set(CPPFILES
     BitFunnelTool.cpp
+    ChunkUtils.cpp
     Commands.cpp
     Environment.cpp
     REPL.cpp

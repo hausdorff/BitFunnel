@@ -28,6 +28,7 @@
 #include "BitFunnel/Configuration/IFileSystem.h"
 #include "BitFunnel/Exceptions.h"
 #include "BitFunnelTool.h"
+#include "ChunkUtils.h"
 #include "REPL.h"
 #include "StatisticsBuilder.h"
 #include "TermTableBuilderTool.h"
@@ -100,6 +101,10 @@ namespace BitFunnel
         else if (strcmp(name, "termtable") == 0)
         {
             executable.reset(new TermTableBuilderTool(m_fileSystem));
+        }
+        else if (strcmp(name, "chunkutils") == 0)
+        {
+            executable.reset(new ChunkUtils(m_fileSystem));
         }
 
         return executable;
