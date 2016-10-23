@@ -22,41 +22,45 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
+#include <memory>                          // std::unqiue_ptr member.
+#include <vector>                          // std::vector member.
 
-#include "ChunkUtils/ChunkProcessor.h"
-#include "IExecutable.h"
-
+#include "BitFunnel/NonCopyable.h"         // Inherits from NonCopyable.
 
 namespace BitFunnel
 {
-    class IFileSystem;
-
-    class ChunkUtils : public IExecutable
+    class ChunkStream : public NonCopyable
     {
     public:
-        ChunkUtils(IFileSystem& fileSystem);
+        ChunkStream(Term::StreamId id);
+        virtual Term::StreamId GetId();
 
-        //
-        // IExecutable methods
-        //
-        virtual int Main(std::istream& input,
-                         std::ostream& output,
-                         int argc,
-                         char const *argv[]) override;
-
+        virtual void AddTerm(char const * term);
+        virtual size_t GetTermCount();
     private:
-        std::shared_ptr<ChunkProcessor> LoadChunkFile(
-            std::ostream& output,
-            std::vector<std::string> filePaths,
-            size_t index) const;
+        Term::StreamId m_id;
+        size_t m_termCount = 0;
+    };
 
-        void LoadAndProcessChunkFileList(
-            std::ostream& output,
-            char const * intermediateDirectory,
-            char const * chunkListFileName) const;
+    class ChunkDocument : public NonCopyable
+    {
+    public:
+        ChunkDocument(DocId id);
+        virtual DocId GetId();
 
-        IFileSystem& m_fileSystem;
+        virtual void OpenStream(Term::StreamId id);
+        virtual void CloseStream();
+        virtual size_t GetStreamCount();
+        // TODO: Subscript operator to retrieve a specific stream.
+
+        virtual void AddTermToOpenStream(char const * term);
+
+        virtual void AddSourceText(char const * start, size_t n);
+        virtual std::vector<char> & GetSourceText();
+    private:
+        DocId m_id;
+        std::vector<char> m_sourceText;
+        std::vector<std::unique_ptr<ChunkStream>> m_streams;
+        size_t m_currentStream = 0;
     };
 }

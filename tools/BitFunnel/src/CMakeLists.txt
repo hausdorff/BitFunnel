@@ -2,6 +2,8 @@
 
 set(CPPFILES
     BitFunnelTool.cpp
+    ChunkUtils/ChunkData.cpp
+    ChunkUtils/ChunkProcessor.cpp
     ChunkUtils.cpp
     Commands.cpp
     Environment.cpp
@@ -20,6 +22,9 @@ set(POSIX_CPPFILES
 
 set(PRIVATE_HFILES
     BitFunnelTool.h
+    ChunkUtils/ChunkData.h
+    ChunkUtils/ChunkProcessor.h
+    ChunkUtils.h
     Commands.h
     Environment.h
     ICommand.h

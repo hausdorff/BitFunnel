@@ -23,6 +23,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -38,6 +39,7 @@
 #include "BitFunnel/Utilities/Stopwatch.h"
 #include "CmdLineParser/CmdLineParser.h"
 #include "ChunkUtils.h"
+#include "ChunkUtils/ChunkProcessor.h"
 
 
 namespace BitFunnel
@@ -53,6 +55,7 @@ namespace BitFunnel
                                 int argc,
                                 char const *argv[])
     {
+        // TODO: Clean up all the unused variables in here.
         CmdLine::CmdLineParser parser(
             "ChunkUtils",
             "Ingest documents and compute statistics about them.");
@@ -88,12 +91,9 @@ namespace BitFunnel
         {
             try
             {
-                LoadAndIngestChunkList(output,
-                                       outputPath,
-                                       manifestFileName,
-                                       gramSize,
-                                       true,
-                                       termToText.IsActivated());
+                LoadAndProcessChunkFileList(output,
+                                        outputPath,
+                                        manifestFileName);
                 returnCode = 0;
             }
             catch (RecoverableError e)
@@ -110,23 +110,53 @@ namespace BitFunnel
     }
 
 
-    void ChunkUtils::LoadAndIngestChunkList(
+    std::shared_ptr<ChunkProcessor>
+        ChunkUtils::LoadChunkFile(std::ostream& /*output*/,
+                                 std::vector<std::string> filePaths,
+                                 size_t index) const
+    {
+        if (index >= filePaths.size())
+        {
+            FatalError error("ChunkManifestIngestor: chunk index out of range.");
+            throw error;
+        }
+
+        auto input = m_fileSystem.OpenForRead(filePaths[index].c_str(),
+                                              std::ios::binary);
+
+        if (input->fail())
+        {
+            std::stringstream message;
+            message << "Failed to open chunk file '"
+                << filePaths[index]
+                << "'";
+            throw FatalError(message.str());
+        }
+
+        input->seekg(0, input->end);
+        auto length = input->tellg();
+        input->seekg(0, input->beg);
+
+        std::vector<char> chunkData;
+        chunkData.reserve(static_cast<size_t>(length) + 1ull);
+        chunkData.insert(chunkData.begin(),
+                         (std::istreambuf_iterator<char>(*input)),
+                         std::istreambuf_iterator<char>());
+
+        // NOTE: The act of constructing a ChunkProcessor causes the bytes in
+        // chunkData to be parsed and processed.
+        return std::unique_ptr<ChunkProcessor>(
+            new ChunkProcessor(
+                &chunkData[0],
+                &chunkData[0] + chunkData.size()));
+    }
+
+
+    void ChunkUtils::LoadAndProcessChunkFileList(
         std::ostream& output,
         char const * intermediateDirectory,
-        char const * chunkListFileName,
-        // TODO: gramSize should be unsigned once CmdLineParser supports unsigned.
-        int gramSize,
-        bool generateStatistics,
-        bool generateTermToText) const
+        char const * chunkListFileName) const
     {
-        // TODO: cast of gramSize can be removed when it's fixed to be unsigned.
-        auto index = Factories::CreateSimpleIndex(m_fileSystem);
-        index->ConfigureForStatistics(intermediateDirectory,
-                                      static_cast<size_t>(gramSize),
-                                      generateTermToText);
-        index->StartIndex();
-
-
         // TODO: Add try/catch around file operations.
         output
             << "Loading chunk list file '" << chunkListFileName << "'" << std::endl
@@ -138,43 +168,28 @@ namespace BitFunnel
 
         output << "Reading " << filePaths.size() << " files\n";
 
-        IConfiguration const & configuration = index->GetConfiguration();
-        IIngestor & ingestor = index->GetIngestor();
-
-        auto manifest = Factories::CreateChunkManifestIngestor(
-            m_fileSystem,
-            filePaths,
-            configuration,
-            ingestor,
-            false);
-
-        output << "Ingesting . . ." << std::endl;
-
+        size_t totalDocumentCount = 0;
         Stopwatch stopwatch;
 
-        // TODO: Use correct thread count.
-        const size_t threadCount = 1;
-        IngestChunks(*manifest, threadCount);
+        for (size_t i = 0; i < filePaths.size(); ++i) {
+            auto chunks = LoadChunkFile(output, filePaths, i);
+
+            size_t documentCount = chunks->GetDocumentCount();
+            output
+                << "Number of chunks: "
+                << documentCount
+                << std::endl;
+
+            // ProcessChunkFile(output, intermediateDirectory, chunks);
+
+            totalDocumentCount += documentCount;
+        }
 
         const double elapsedTime = stopwatch.ElapsedTime();
-        const size_t totalSourceBytes = ingestor.GetTotalSouceBytesIngested();
 
         output
             << "Ingestion complete." << std::endl
-            << "  Ingestion time = " << elapsedTime << std::endl
-            << "  Ingestion rate (bytes/s): "
-            << totalSourceBytes / elapsedTime << std::endl;
-
-        ingestor.PrintStatistics(output);
-
-        if (generateStatistics)
-        {
-            TermToText const * termToText = nullptr;
-            if (configuration.KeepTermText())
-            {
-                termToText = &configuration.GetTermToText();
-            }
-            ingestor.WriteStatistics(index->GetFileManager(), termToText);
-        }
+            << "  Ingestion time: " << elapsedTime << std::endl
+            << "  Total document count: " << totalDocumentCount << std::endl;
     }
 }

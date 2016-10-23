@@ -22,41 +22,41 @@
 
 #pragma once
 
-#include <memory>
-#include <vector>
+#include <memory>                          // std::unqiue_ptr member.
+#include <vector>                          // std::vector member.
 
-#include "ChunkUtils/ChunkProcessor.h"
-#include "IExecutable.h"
-
+#include "BitFunnel/IInterface.h"          // Base class.
+#include "BitFunnel/Index/IChunkReader.h"  // Inherits from
+                                           // IChunkReader::IEvents.
+#include "BitFunnel/NonCopyable.h"         // Inherits from NonCopyable.
+#include "ChunkData.h"
 
 namespace BitFunnel
 {
-    class IFileSystem;
-
-    class ChunkUtils : public IExecutable
+    // DESIGN NOTE: Consider adding a document factory parameter to the
+    // constructor.
+    class ChunkProcessor : public NonCopyable, public IEvents
     {
     public:
-        ChunkUtils(IFileSystem& fileSystem);
+        ChunkProcessor(char const * start,
+                       char const * end);
+
+        virtual size_t GetDocumentCount();
+
 
         //
-        // IExecutable methods
+        // ChunkReader::IEvents methods.
         //
-        virtual int Main(std::istream& input,
-                         std::ostream& output,
-                         int argc,
-                         char const *argv[]) override;
+        virtual void OnFileEnter() override;
+        virtual void OnDocumentEnter(DocId id) override;
+        virtual void OnStreamEnter(Term::StreamId id) override;
+        virtual void OnTerm(char const * term) override;
+        virtual void OnStreamExit() override;
+        virtual void OnDocumentExit(size_t bytesRead) override;
+        virtual void OnFileExit() override;
 
     private:
-        std::shared_ptr<ChunkProcessor> LoadChunkFile(
-            std::ostream& output,
-            std::vector<std::string> filePaths,
-            size_t index) const;
-
-        void LoadAndProcessChunkFileList(
-            std::ostream& output,
-            char const * intermediateDirectory,
-            char const * chunkListFileName) const;
-
-        IFileSystem& m_fileSystem;
+        std::vector<std::unique_ptr<ChunkDocument>> m_chunks;
+        size_t m_currentChunk = 0;
     };
 }
