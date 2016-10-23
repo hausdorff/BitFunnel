@@ -33,11 +33,13 @@
 
 namespace BitFunnel
 {
+    class IChunkReader;
     class IChunkManifestIngestor;
     class IConfiguration;
     class IDocument;
     class IDocumentDataSchema;
     class IDocumentFrequencyTable;
+    class IEvents;
     class IFactSet;
     class IFileManager;
     class IFileSystem;
@@ -70,6 +72,12 @@ namespace BitFunnel
                 IConfiguration const & config,
                 IIngestor& ingestor,
                 bool cacheDocuments);
+
+        std::unique_ptr<IChunkReader>
+            CreateChunkReader(
+                char const * start,
+                char const * end,
+                IEvents& processor);
 
         std::unique_ptr<IConfiguration>
             CreateConfiguration(size_t maxGramSize,

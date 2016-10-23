@@ -37,7 +37,7 @@ namespace BitFunnel
 
     // DESIGN NOTE: Consider adding a document factory parameter to the
     // constructor.
-    class ChunkIngestor : public NonCopyable, public ChunkReader::IEvents
+    class ChunkIngestor : public NonCopyable, public IEvents
     {
     public:
         ChunkIngestor(char const * start,

@@ -34,7 +34,7 @@ namespace BitFunnel
         // Parses some chunk data, and counts IEvents events as they happen.
         // For example, if the chunk data contains 5 well-formed streams, this
         // class should have counted 5 OnStreamEnter and OnStreamExit events.
-        class ChunkEventTracer : public ChunkReader::IEvents
+        class ChunkEventTracer : public IEvents
         {
         public:
             ChunkEventTracer(std::vector<char> const & chunkData)

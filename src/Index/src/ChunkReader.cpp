@@ -23,11 +23,22 @@
 #include <sstream>
 
 #include "BitFunnel/Exceptions.h"
+#include "BitFunnel/Index/Factories.h"
 #include "ChunkReader.h"
 
 
 namespace BitFunnel
 {
+    std::unique_ptr<IChunkReader>
+        Factories::CreateChunkReader(
+            char const * start,
+            char const * end,
+            IEvents& processor)
+    {
+        return std::unique_ptr<IChunkReader>(
+            new ChunkReader(start, end, processor));
+    }
+
     static const uint64_t c_docIdDigitCount = 16;
     static const uint64_t c_streamIdDigitCount = 2;
 
