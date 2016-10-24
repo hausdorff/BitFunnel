@@ -68,7 +68,7 @@ namespace BitFunnel
 
     void ChunkDocument::OpenStream(Term::StreamId id)
     {
-        m_streams.push_back(std::unique_ptr<ChunkStream>(new ChunkStream(id)));
+        m_streams.push_back(std::shared_ptr<ChunkStream>(new ChunkStream(id)));
     }
 
     void ChunkDocument::CloseStream()
@@ -84,6 +84,11 @@ namespace BitFunnel
     size_t ChunkDocument::GetStreamCount()
     {
         return m_streams.size();
+    }
+
+    std::shared_ptr<ChunkStream> & ChunkDocument::operator[] (const int index)
+    {
+        return m_streams[index];
     }
 
     void ChunkDocument::AddSourceText(char const * start, size_t n)

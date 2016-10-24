@@ -70,7 +70,7 @@ namespace BitFunnel
     {
         char const * start = m_next;
         uint64_t id = GetDocId();
-        m_processor.OnDocumentEnter(id);
+        m_processor.OnDocumentEnter(id, start);
         while (PeekChar() != 0)
         {
             ProcessStream();

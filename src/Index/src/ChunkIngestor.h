@@ -50,7 +50,7 @@ namespace BitFunnel
         // ChunkReader::IEvents methods.
         //
         virtual void OnFileEnter() override;
-        virtual void OnDocumentEnter(DocId id) override;
+        virtual void OnDocumentEnter(DocId id, char const * start) override;
         virtual void OnStreamEnter(Term::StreamId id) override;
         virtual void OnTerm(char const * term) override;
         virtual void OnStreamExit() override;

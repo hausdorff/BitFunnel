@@ -60,7 +60,7 @@ namespace BitFunnel
             }
 
 
-            void OnDocumentEnter(DocId id) override
+            void OnDocumentEnter(DocId id, char const * /*start*/) override
             {
                 m_trace << "OnDocumentEnter;DocId: "
                         << id

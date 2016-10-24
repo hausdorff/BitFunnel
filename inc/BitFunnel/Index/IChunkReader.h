@@ -10,7 +10,7 @@ namespace BitFunnel
     {
     public:
         virtual void OnFileEnter() = 0;
-        virtual void OnDocumentEnter(DocId id) = 0;
+        virtual void OnDocumentEnter(DocId id, char const * start) = 0;
         virtual void OnStreamEnter(Term::StreamId id) = 0;
         virtual void OnTerm(char const * term) = 0;
         virtual void OnStreamExit() = 0;

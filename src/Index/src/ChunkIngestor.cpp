@@ -47,7 +47,7 @@ namespace BitFunnel
     }
 
 
-    void ChunkIngestor::OnDocumentEnter(DocId id)
+    void ChunkIngestor::OnDocumentEnter(DocId id, char const * /*start*/)
     {
         m_currentDocument.reset(new Document(m_config, id));
     }

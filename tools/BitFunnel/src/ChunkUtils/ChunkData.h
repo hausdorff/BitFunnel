@@ -51,7 +51,8 @@ namespace BitFunnel
         virtual void OpenStream(Term::StreamId id);
         virtual void CloseStream();
         virtual size_t GetStreamCount();
-        // TODO: Subscript operator to retrieve a specific stream.
+
+        std::shared_ptr<ChunkStream> & operator[] (const int index);
 
         virtual void AddTermToOpenStream(char const * term);
 
@@ -60,7 +61,7 @@ namespace BitFunnel
     private:
         DocId m_id;
         std::vector<char> m_sourceText;
-        std::vector<std::unique_ptr<ChunkStream>> m_streams;
+        std::vector<std::shared_ptr<ChunkStream>> m_streams;
         size_t m_currentStream = 0;
     };
 }

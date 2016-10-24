@@ -43,39 +43,48 @@ namespace BitFunnel
     }
 
 
+    std::shared_ptr<ChunkDocument> & ChunkProcessor::operator[] (const int index)
+    {
+        return m_chunks[index];
+    }
+
+
     void ChunkProcessor::OnFileEnter()
     {
     }
 
 
-    void ChunkProcessor::OnDocumentEnter(DocId id)
+    void ChunkProcessor::OnDocumentEnter(DocId id, char const * start)
     {
+        m_currentChunkStart = start;
         m_chunks.push_back(
-            std::unique_ptr<ChunkDocument>(new ChunkDocument(id)));
+            std::shared_ptr<ChunkDocument>(new ChunkDocument(id)));
     }
 
 
     void ChunkProcessor::OnStreamEnter(Term::StreamId id)
     {
-        m_chunks[m_currentChunk]->OpenStream(id);
+        m_chunks[m_currentChunkIndex]->OpenStream(id);
     }
 
 
     void ChunkProcessor::OnTerm(char const * term)
     {
-        m_chunks[m_currentChunk]->AddTermToOpenStream(term);
+        m_chunks[m_currentChunkIndex]->AddTermToOpenStream(term);
     }
 
 
     void ChunkProcessor::OnStreamExit()
     {
-        m_chunks[m_currentChunk]->CloseStream();
+        m_chunks[m_currentChunkIndex]->CloseStream();
     }
 
 
-    void ChunkProcessor::OnDocumentExit(size_t /*bytesRead*/)
+    void ChunkProcessor::OnDocumentExit(size_t bytesRead)
     {
-        ++m_currentChunk;
+        m_chunks[m_currentChunkIndex]->AddSourceText(m_currentChunkStart,
+                                                     bytesRead);
+        ++m_currentChunkIndex;
         // TODO: when we enter a new document, we will blow away the old
         // unique_ptr to the `ChunkDocument`. We should persist it here,
         // probably.
