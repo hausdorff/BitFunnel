@@ -51,9 +51,9 @@ namespace BitFunnel
 
 
     int ChunkUtils::Main(std::istream& /*input*/,
-                                std::ostream& output,
-                                int argc,
-                                char const *argv[])
+                         std::ostream& output,
+                         int argc,
+                         char const *argv[])
     {
         // TODO: Clean up all the unused variables in here.
         CmdLine::CmdLineParser parser(
@@ -65,25 +65,12 @@ namespace BitFunnel
             "Path to a file containing the paths to the chunk files to be ingested. "
             "One chunk file per line. Paths are relative to working directory.");
 
-        CmdLine::RequiredParameter<char const *> outputPath(
-            "outDir",
-            "Path to the output directory where files will be written. ");
-
-        CmdLine::OptionalParameterList termToText(
-            "text",
-            "Create mapping from Term::Hash to term text.");
-
-        // TODO: This parameter should be unsigned, but it doesn't seem to work
-        // with CmdLineParser.
-        CmdLine::OptionalParameter<int> gramSize(
-            "gramsize",
-            "Set the maximum ngram size for phrases.",
-            1u);
+        CmdLine::RequiredParameter<char const *> outputFile(
+            "outFile",
+            "The output file to generate. ");
 
         parser.AddParameter(manifestFileName);
-        parser.AddParameter(outputPath);
-        parser.AddParameter(termToText);
-        parser.AddParameter(gramSize);
+        parser.AddParameter(outputFile);
 
         int returnCode = 1;
 
@@ -92,8 +79,8 @@ namespace BitFunnel
             try
             {
                 LoadAndProcessChunkFileList(output,
-                                        outputPath,
-                                        manifestFileName);
+                                            outputFile,
+                                            manifestFileName);
                 returnCode = 0;
             }
             catch (RecoverableError e)
@@ -152,15 +139,58 @@ namespace BitFunnel
     }
 
 
+    void ChunkUtils::WriteChunkFileStatisticsHeader(
+        std::ostream& statsOutput) const
+    {
+        statsOutput << "docId,lengthOfAllStreams" << std::endl;
+    }
+
+
+    void ChunkUtils::WriteChunkFileStatistics(
+        std::ostream& statsOutput,
+        std::shared_ptr<ChunkProcessor> chunks) const
+    {
+        for (size_t i = 0; i < chunks->GetDocumentCount(); ++i) {
+            auto chunk = (*chunks)[i];
+
+            // Print statistics.
+            size_t lengthOfAllStreams = 0;
+            for (size_t j = 0; j < (*chunk).GetStreamCount(); ++j) {
+                lengthOfAllStreams += (*chunk)[j]->GetTermCount();
+            }
+
+            statsOutput
+                << chunk->GetId() << "," << lengthOfAllStreams << std::endl;
+        }
+    }
+
+
+    void ChunkUtils::WriteChunkFiles(
+        std::ostream& chunkfileOutput,
+        std::shared_ptr<ChunkProcessor> chunks) const
+    {
+        for (size_t i = 0; i < chunks->GetDocumentCount(); ++i) {
+            auto chunk = (*chunks)[i];
+
+            // TODO: Allow ability to filter out chunks we don't want.
+            // Write out chunk file.
+            auto sourceText = chunk->GetSourceText();
+            for (size_t j = 0; j < sourceText.size(); ++j) {
+                chunkfileOutput << sourceText[j];
+            }
+        }
+    }
+
+
     void ChunkUtils::LoadAndProcessChunkFileList(
         std::ostream& output,
-        char const * intermediateDirectory,
+        char const * chunkFilePath,
         char const * chunkListFileName) const
     {
         // TODO: Add try/catch around file operations.
         output
             << "Loading chunk list file '" << chunkListFileName << "'" << std::endl
-            << "Temp dir: '" << intermediateDirectory << "'"<< std::endl;
+            << "Output file: '" << chunkFilePath << "'"<< std::endl;
 
         std::vector<std::string> filePaths = ReadLines(
             m_fileSystem,
@@ -168,19 +198,33 @@ namespace BitFunnel
 
         output << "Reading " << filePaths.size() << " files\n";
 
+        bool writeChunks = false;
+        std::unique_ptr<std::ostream> outputFileStream =
+            m_fileSystem.OpenForWrite(
+                chunkFilePath,
+                std::ios::binary);
+        if (!writeChunks)
+        {
+            WriteChunkFileStatisticsHeader(*outputFileStream);
+        }
+
         size_t totalDocumentCount = 0;
         Stopwatch stopwatch;
 
         for (size_t i = 0; i < filePaths.size(); ++i) {
+            // Process a single chunk file.
             auto chunks = LoadChunkFile(output, filePaths, i);
 
             size_t documentCount = chunks->GetDocumentCount();
-            output
-                << "Number of chunks: "
-                << documentCount
-                << std::endl;
 
-            // ProcessChunkFile(output, intermediateDirectory, chunks);
+            if (!writeChunks)
+            {
+                WriteChunkFileStatistics(*outputFileStream, chunks);
+            }
+            else
+            {
+                WriteChunkFiles(*outputFileStream, chunks);
+            }
 
             totalDocumentCount += documentCount;
         }

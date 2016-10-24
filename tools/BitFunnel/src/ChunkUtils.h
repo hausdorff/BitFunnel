@@ -52,6 +52,16 @@ namespace BitFunnel
             std::vector<std::string> filePaths,
             size_t index) const;
 
+        void WriteChunkFileStatisticsHeader(std::ostream& statsOutput) const;
+
+        void WriteChunkFileStatistics(
+            std::ostream& statsOutput,
+            std::shared_ptr<ChunkProcessor> chunks) const;
+
+        void WriteChunkFiles(
+            std::ostream& chunkfileOutput,
+            std::shared_ptr<ChunkProcessor> chunks) const;
+
         void LoadAndProcessChunkFileList(
             std::ostream& output,
             char const * intermediateDirectory,
