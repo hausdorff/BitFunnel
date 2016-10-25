@@ -268,16 +268,29 @@ namespace BitFunnel
             m_fileSystem.OpenForWrite(
                 chunkFilePath,
                 std::ios::binary);
+        std::set<DocId> docIds;
         if (!writeChunks)
         {
             WriteChunkFileStatisticsHeader(
                 *outputFileStream);
+        }
+        else
+        {
+            std::vector<std::string> docIdStrings = ReadLines(
+                m_fileSystem,
+                docIdsFile);
+            docIds = toIds(docIdStrings);
         }
 
         size_t totalDocumentCount = 0;
         Stopwatch stopwatch;
 
         for (size_t i = 0; i < filePaths.size(); ++i) {
+            if ((i % 1000) == 0)
+            {
+                output << "Documents processed: " << i << std::endl;
+            }
+
             // Process a single chunk file.
             auto chunks = LoadChunkFile(output, filePaths, i);
 
@@ -289,10 +302,6 @@ namespace BitFunnel
             }
             else
             {
-                std::vector<std::string> docIdStrings = ReadLines(
-                    m_fileSystem,
-                    docIdsFile);
-                std::set<DocId> docIds = toIds(docIdStrings);
                 WriteChunkFiles(*outputFileStream, chunks, docIds);
             }
 
