@@ -23,6 +23,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <vector>
 
 #include "ChunkUtils/ChunkProcessor.h"
@@ -60,12 +61,15 @@ namespace BitFunnel
 
         void WriteChunkFiles(
             std::ostream& chunkfileOutput,
-            std::shared_ptr<ChunkProcessor> chunks) const;
+            std::shared_ptr<ChunkProcessor> chunks,
+            std::set<DocId>& docIds) const;
 
         void LoadAndProcessChunkFileList(
             std::ostream& output,
+            char const * jobType,
             char const * intermediateDirectory,
-            char const * chunkListFileName) const;
+            char const * chunkListFileName,
+            char const * docIdsFile) const;
 
         IFileSystem& m_fileSystem;
     };

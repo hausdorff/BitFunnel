@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "BitFunnel/Configuration/IFileSystem.h"
+#include "BitFunnel/Configuration/IFileSystem.h"
 #include "BitFunnel/Exceptions.h"
 #include "BitFunnel/Index/Factories.h"
 #include "BitFunnel/Index/IChunkManifestIngestor.h"
@@ -60,6 +61,15 @@ namespace BitFunnel
             "ChunkUtils",
             "Ingest documents and compute statistics about them.");
 
+        CmdLine::RequiredParameter<char const *> jobType(
+            "jobType",
+            "The job is either a 'filter' type (in which case this utility "
+            "will look at the docIds in 'docIdFile', scan the files in "
+            "'manifestFile' for those Ids, and wrie them to the 'outFile'), "
+            "or a 'stats' type (in which case this utility will simply scan "
+            "all the files in 'manifestFile', and write down statistics about "
+            "the chunk files it finds into 'outfile'). ");
+
         CmdLine::RequiredParameter<char const *> manifestFileName(
             "manifestFile",
             "Path to a file containing the paths to the chunk files to be ingested. "
@@ -69,8 +79,15 @@ namespace BitFunnel
             "outFile",
             "The output file to generate. ");
 
+        CmdLine::OptionalParameter<char const *> docIdsFile(
+            "docIdsFile",
+            "The path to a file containing document IDs to look for.",
+            "");
+
+        parser.AddParameter(jobType);
         parser.AddParameter(manifestFileName);
         parser.AddParameter(outputFile);
+        parser.AddParameter(docIdsFile);
 
         int returnCode = 1;
 
@@ -79,11 +96,17 @@ namespace BitFunnel
             try
             {
                 LoadAndProcessChunkFileList(output,
+                                            jobType,
                                             outputFile,
-                                            manifestFileName);
+                                            manifestFileName,
+                                            docIdsFile);
                 returnCode = 0;
             }
             catch (RecoverableError e)
+            {
+                output << "Error: " << e.what() << std::endl;
+            }
+            catch (FatalError e)
             {
                 output << "Error: " << e.what() << std::endl;
             }
@@ -167,13 +190,19 @@ namespace BitFunnel
 
     void ChunkUtils::WriteChunkFiles(
         std::ostream& chunkfileOutput,
-        std::shared_ptr<ChunkProcessor> chunks) const
+        std::shared_ptr<ChunkProcessor> chunks,
+        std::set<DocId>& docIds) const
     {
         for (size_t i = 0; i < chunks->GetDocumentCount(); ++i) {
             auto chunk = (*chunks)[i];
 
             // TODO: Allow ability to filter out chunks we don't want.
             // Write out chunk file.
+            auto search = docIds.find(chunk->GetId());
+            if (search == docIds.end()) {
+                continue;
+            }
+
             auto sourceText = chunk->GetSourceText();
             for (size_t j = 0; j < sourceText.size(); ++j) {
                 chunkfileOutput << sourceText[j];
@@ -182,11 +211,48 @@ namespace BitFunnel
     }
 
 
+    std::set<DocId> toIds(std::vector<std::string>& ids)
+    {
+        std::vector<DocId> docIds;
+        for(std::string const& idString: ids) {
+            DocId id;
+            std::stringstream idParser(idString);
+            idParser >> id;
+            docIds.push_back(id);
+        }
+
+        return std::set<DocId>(docIds.begin(), docIds.end());
+    }
+
+
     void ChunkUtils::LoadAndProcessChunkFileList(
         std::ostream& output,
+        char const * jobType,
         char const * chunkFilePath,
-        char const * chunkListFileName) const
+        char const * chunkListFileName,
+        char const * docIdsFile) const
     {
+        bool writeChunks = false;
+        if (strcmp(jobType, "stats") == 0)
+        {
+            writeChunks = false;
+        }
+        else if (strcmp(jobType, "filter") == 0)
+        {
+            if (strcmp(docIdsFile, "") == 0)
+            {
+                FatalError error("A doc ids file is required.");
+                throw error;
+            }
+
+            writeChunks = true;
+        }
+        else
+        {
+            FatalError error("Unknown job type.");
+            throw error;
+        }
+
         // TODO: Add try/catch around file operations.
         output
             << "Loading chunk list file '" << chunkListFileName << "'" << std::endl
@@ -198,14 +264,14 @@ namespace BitFunnel
 
         output << "Reading " << filePaths.size() << " files\n";
 
-        bool writeChunks = false;
         std::unique_ptr<std::ostream> outputFileStream =
             m_fileSystem.OpenForWrite(
                 chunkFilePath,
                 std::ios::binary);
         if (!writeChunks)
         {
-            WriteChunkFileStatisticsHeader(*outputFileStream);
+            WriteChunkFileStatisticsHeader(
+                *outputFileStream);
         }
 
         size_t totalDocumentCount = 0;
@@ -223,7 +289,11 @@ namespace BitFunnel
             }
             else
             {
-                WriteChunkFiles(*outputFileStream, chunks);
+                std::vector<std::string> docIdStrings = ReadLines(
+                    m_fileSystem,
+                    docIdsFile);
+                std::set<DocId> docIds = toIds(docIdStrings);
+                WriteChunkFiles(*outputFileStream, chunks, docIds);
             }
 
             totalDocumentCount += documentCount;
